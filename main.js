@@ -4,11 +4,9 @@
     Module dependencies.
   */
 
-  var Docs, Patches, app, coffeekup, docIO, express, io, nib, nicknames, sio, stylus, utilities;
+  var Docs, Patches, app, docIO, express, io, nib, nicknames, sio, stylus, utilities;
 
   express = require('express');
-
-  coffeekup = require('coffeekup');
 
   stylus = require('stylus');
 

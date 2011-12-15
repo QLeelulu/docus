@@ -3,7 +3,6 @@
 ###
 
 express = require('express')
-coffeekup = require('coffeekup')
 stylus = require('stylus')
 nib = require('nib')
 sio = require('socket.io')
