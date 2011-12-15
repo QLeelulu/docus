@@ -7,7 +7,12 @@ diff_match_patch = require('./public/js/diff_match_patch').diff_match_patch
 dmp = new diff_match_patch()
 
 mongo = require('mongoskin')
-config = require('./config')
+
+if module.parent
+    config = require('./config')
+else
+    confit = require('.config.nae')
+
 db = mongo.db('{{username}}:{{password}}@{{host}}:{{port}}/{{dbname}}?auto_reconnect'.format({
                 host: config.MONGO_HOST,
                 port: config.MONGO_PORT,
