@@ -1,0 +1,33 @@
+extends layout
+
+block head_css
+    style(type="text/css")
+        .main-form{ margin-top:20px; }
+        .main-form .btn { 
+            width:100px; height:50px; margin-left:10px; 
+            font-size:18px; font-weight:bold;
+        }
+        #docTitle { height:40px; line-height:40px; width: 280px; font-size:18px;}
+
+block title
+    |  -- Home
+
+block content
+    div.container
+        div.hero-unit.main-form(style="text-align:center;")
+            h1 Doc Us &lt;---&gt; Us Doc
+            div
+                form.main-form(method="get", action="/d/", id="docForm", onsubmit="return false;")
+                    input#docTitle(type="text")
+                    input.btn.large.primary(type="submit", value="Doc Me")
+
+                script(type="text/javascript")
+                    document.getElementById('docForm').onsubmit = function(){
+                        window.location.href = '/d/' + document.getElementById('docTitle').value;
+                        return false;
+                    }
+
+
+block footer
+    p &copy; QLeelulu 2011
+

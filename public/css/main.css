@@ -1,0 +1,12 @@
+body{
+    padding: 0;
+    padding-top: 60px;
+    margin: 0;
+}
+
+#footer p {
+    text-align: center; /* center align it with the container */
+    border-top: solid 1px #eee;
+    padding: 10px;
+    margin-top: 10px;
+}

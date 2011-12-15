@@ -1,0 +1,28 @@
+!!! 5
+html(lang="zh-cn")
+    head
+        title Doc Us
+            block title
+        link(href="/css/bootstrap.min.css", rel="stylesheet")
+        link(rel="stylesheet", type="text/css", href="/css/main.css")
+        block head_css
+        block head_script
+    body
+        block header
+        div.topbar
+            div.fill
+                div.container
+                    a.brand(href="###") Doc Us
+                    ul.nav
+                        li.active
+                            a(href="/") Home
+                        li
+                            a(href="/about") About
+                        li
+                            a(href="/contact") Contact
+
+
+        #mainContent
+            block content
+        #footer
+            block footer

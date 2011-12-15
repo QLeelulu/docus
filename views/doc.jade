@@ -1,0 +1,36 @@
+extends layout
+
+block head_css
+    style
+        body{padding-top:0; }
+        .topbar{ position: static; padding-top:0; }
+        table{
+            margin-bottom: 0;
+            font-size:12px;
+        }
+        table td{ padding:0; }
+    link(rel="stylesheet", href="/js/editor/themes/default/ueditor.css")
+
+block title
+    |   -- #{doc.title}
+
+block content
+    //- h1 #{doc.title}
+    #docEditor
+    
+
+block footer
+    script(type="text/javascript")
+        var DocInfo = {
+            slug: '#{doc.slug}'
+        };
+
+    script(src="/socket.io/socket.io.js")
+    script(src="/js/editor/editor_config.js")
+    script(src="/js/editor/editor_all_min.js")
+    script(src="/js/diff_match_patch.js")
+    script(src="/js/docus.js")
+
+
+
+
