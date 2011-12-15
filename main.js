@@ -50,6 +50,20 @@
   });
 
   /*
+   * App listen.
+  */
+
+  if (!module.parent) {
+    app.listen(3000, function() {
+      var addr;
+      addr = app.address();
+      return console.log('   app listening on http://' + addr.address + ':' + addr.port);
+    });
+  } else {
+    exports.app = app;
+  }
+
+  /*
    * App routes.
   */
 
@@ -103,16 +117,6 @@
         });
       }
     });
-  });
-
-  /*
-   * App listen.
-  */
-
-  app.listen(3000, function() {
-    var addr;
-    addr = app.address();
-    return console.log('   app listening on http://' + addr.address + ':' + addr.port);
   });
 
   /*

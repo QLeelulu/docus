@@ -34,6 +34,19 @@ app.configure(() ->
     #app.register( '.coffee', coffeekup.adapters.express )
 )
 
+
+###
+ * App listen.
+###
+
+if !module.parent
+    app.listen 3000, () ->
+        addr = app.address()
+        console.log('   app listening on http://' + addr.address + ':' + addr.port)
+else
+    exports.app = app
+
+
 ###
  * App routes.
 ###
@@ -74,15 +87,6 @@ app.get '/d/:name', (req, res) ->
                 res.render('doc', {doc: doc})
             )
     )
-
-###
- * App listen.
-###
-
-app.listen 3000, () ->
-    addr = app.address()
-    console.log('   app listening on http://' + addr.address + ':' + addr.port)
-
 
 ###
  * Socket.IO server (single process only)
