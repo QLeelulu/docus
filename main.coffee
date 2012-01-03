@@ -87,6 +87,32 @@ app.get '/d/:name', (req, res) ->
             )
     )
 
+app.get '/v/:name', (req, res) ->
+    name = req.params.name
+    slug = utilities.makeSlug(name)
+    Docs.findOne( {slug: slug}, (err, doc) ->
+        if err
+            console.error err
+            return res.send 'Database Error'
+        if doc
+            # 如果doc的版本大于已经打了patch的版本，
+            # 需要加载还没有打patch的版本，进行合并
+            if doc.ver > doc.ver_patch
+                Patches
+                    .find( {doc_id: doc._id, ver: {$gt: doc.ver_patch}}, {fields:{'_id':0, 'doc_id':0}} )
+                    .sort( {ver:1} )
+                    .toArray (err, patches) ->
+                        if !err
+                            doc.patches = patches
+                            res.render('doc_view', {doc: doc})
+                        else
+                            return res.send 'Server Error! ~_~'
+            else
+                res.render('doc_view', {doc: doc})
+        else
+            return res.send '404! ~_~'
+    )
+
 ###
  * Socket.IO server (single process only)
 ###
@@ -167,6 +193,7 @@ docIO = io.of('/doc').on 'connection', (socket) ->
                 socket.emit 'init', r
     
     socket.on 'new version', (ver) ->
+        # update version NUM
         Docs.findAndModify  {slug: socket.__slug}, #query
                             [], #sort
                             { '$inc': {ver: 1} }, #update
@@ -179,6 +206,7 @@ docIO = io.of('/doc').on 'connection', (socket) ->
                                         patch: ver.patch_text
                                         created_at: new Date()
                                     }
+                                    # add a new patch
                                     Patches.insert patch, {safe: true}, (err, _patch) ->
                                         if err || !_patch
                                             return console.error err

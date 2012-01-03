@@ -117,6 +117,52 @@
     });
   });
 
+  app.get('/v/:name', function(req, res) {
+    var name, slug;
+    name = req.params.name;
+    slug = utilities.makeSlug(name);
+    return Docs.findOne({
+      slug: slug
+    }, function(err, doc) {
+      if (err) {
+        console.error(err);
+        return res.send('Database Error');
+      }
+      if (doc) {
+        if (doc.ver > doc.ver_patch) {
+          return Patches.find({
+            doc_id: doc._id,
+            ver: {
+              $gt: doc.ver_patch
+            }
+          }, {
+            fields: {
+              '_id': 0,
+              'doc_id': 0
+            }
+          }).sort({
+            ver: 1
+          }).toArray(function(err, patches) {
+            if (!err) {
+              doc.patches = patches;
+              return res.render('doc_view', {
+                doc: doc
+              });
+            } else {
+              return res.send('Server Error! ~_~');
+            }
+          });
+        } else {
+          return res.render('doc_view', {
+            doc: doc
+          });
+        }
+      } else {
+        return res.send('404! ~_~');
+      }
+    });
+  });
+
   /*
    * Socket.IO server (single process only)
   */

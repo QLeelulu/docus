@@ -1,0 +1,41 @@
+extends layout
+
+block head_bootstrap
+    
+block head_css
+    link(rel="stylesheet", href="/js/editor/themes/default/iframe.css")
+    link(rel="stylesheet", href="/js/editor/third-party/SyntaxHighlighter/shCoreDefault.css")
+    style
+        body{padding-top:0; }
+        .topbar{ position: static; padding-top:0; }
+
+        #docHeader{ height:20px; padding:3px 10px; border-bottom:solid 1px #ccc; margin-bottom:10px; }
+        #docHeader .sitename{ font-size:15px; font-weight:bold; margin-right:20px; }
+        #docHeader .docTitle{ font-size:14px; font-weight:bold; color:green; }
+        #docHeader .version{color:#555; font-size:13px;}
+        #docContent {padding:0 10px;}
+
+
+block title
+    |   -- #{doc.title}
+
+block header
+    div#docHeader
+        span.sitename Doc Us
+        span.docTitle [{ #{doc.title} }]
+        span.version .ver#{doc.ver}
+
+block content
+    #docContent
+
+block footer
+    script(type="text/javascript")
+        var DocInfo = !{JSON.stringify(doc)};
+
+    script(src="/js/diff_match_patch.js")
+    script(src="/js/jquery-1.7.1.min.js")
+    script(src="/js/docview.js")
+
+    script(src="/js/editor/third-party/SyntaxHighlighter/shCore.js")
+    script(type="text/javascript")
+        SyntaxHighlighter.all()
