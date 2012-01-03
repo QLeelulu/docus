@@ -4,6 +4,18 @@ body{
     margin: 0;
 }
 
+#loadpage{
+	position: fixed;
+	_position: absolute;
+	z-index: 110000;
+	top: 0;
+	left: 0;
+	width: 130px;
+	padding: 2px;
+	text-align: center;
+	background: #c44;
+	color: #fff;
+}
 #footer p {
     text-align: center; /* center align it with the container */
     border-top: solid 1px #eee;

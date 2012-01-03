@@ -4,7 +4,7 @@
     Module dependencies.
   */
 
-  var Docs, Patches, app, docIO, express, io, nib, nicknames, sio, stylus, utilities;
+  var Docs, LAST_MSG, Patches, app, docIO, express, io, nib, nicknames, sio, stylus, utilities;
 
   express = require('express');
 
@@ -110,7 +110,7 @@
             return res.send('Database Error');
           }
           return res.render('doc', {
-            doc: doc
+            doc: doc[0]
           });
         });
       }
@@ -125,6 +125,8 @@
 
   nicknames = {};
 
+  LAST_MSG = null;
+
   docIO = io.of('/doc').on('connection', function(socket) {
     socket.on('init', function(data) {
       return Docs.findOne({
@@ -135,6 +137,19 @@
           success: false
         };
         if (!err && doc) {
+          if (!nicknames[data.slug]) {
+            nicknames[data.slug] = {
+              __count: 0
+            };
+          }
+          if (!data.nickname) {
+            data.nickname = 'user' + (nicknames[data.slug].__count + 1);
+          }
+          if (data.nickname === '__count') {
+            data.nickname = '_count';
+          } else if (nicknames[data.slug][data.nickname]) {
+            data.nickname += '[' + (new Date()).getTime() + ']';
+          }
           if (doc.ver > doc.ver_patch) {
             return Patches.find({
               doc_id: doc._id,
@@ -150,9 +165,17 @@
                 r.doc = doc;
                 r.patches = patches;
                 socket.__slug = data.slug;
+                nicknames[data.slug][data.nickname] = socket.nickname = data.nickname;
+                nicknames[data.slug].__count += 1;
+                r.nickname = data.nickname;
+                r.onlines = nicknames[data.slug].__count;
+                r.lastMsg = LAST_MSG;
                 socket.join('doc_' + data.slug);
                 socket.emit('init', r);
-                return socket.broadcast.to('doc_' + data.slug).emit('new editor');
+                return socket.broadcast.to('doc_' + data.slug).emit('new editor', data.nickname);
+              } else {
+                r.error = 'Server Error';
+                return socket.emit('init', r);
               }
             });
           } else {
@@ -160,15 +183,25 @@
             r.socket_id = socket.id;
             r.doc = doc;
             socket.__slug = data.slug;
+            nicknames[data.slug][data.nickname] = socket.nickname = data.nickname;
+            nicknames[data.slug].__count += 1;
+            r.nickname = data.nickname;
+            r.onlines = nicknames[data.slug].__count;
+            r.lastMsg = LAST_MSG;
             socket.join('doc_' + data.slug);
             socket.emit('init', r);
-            return socket.broadcast.to('doc_' + data.slug).emit('new editor');
+            return socket.broadcast.to('doc_' + data.slug).emit('new editor', {
+              nickname: data.nickname,
+              onlines: r.onlines
+            });
           }
+        } else {
+          r.error = 'Server Error';
+          return socket.emit('init', r);
         }
       });
     });
-    return socket.on('new version', function(ver) {
-      console.log(ver);
+    socket.on('new version', function(ver) {
       return Docs.findAndModify({
         slug: socket.__slug
       }, [], {
@@ -196,6 +229,36 @@
           });
         }
       });
+    });
+    socket.on('disconnect', function() {
+      if (!socket.__slug || !socket.nickname) return;
+      delete nicknames[socket.__slug][socket.nickname];
+      nicknames[socket.__slug].__count--;
+      socket.broadcast.to('doc_' + socket.__slug).emit('leave', {
+        nickname: socket.nickname,
+        onlines: nicknames[socket.__slug].__count
+      });
+      if (nicknames[socket.__slug].__count < 1) delete nicknames[socket.__slug];
+      if (nicknames[socket.__slug] && nicknames[socket.__slug].__count > 0) {
+        return socket.broadcast.to('doc_' + socket.__slug).emit('nicknames', {
+          nicknames: nicknames[socket.__slug],
+          onlines: nicknames[socket.__slug].__count
+        });
+      }
+    });
+    socket.on('new msg', function(msg) {
+      LAST_MSG = {
+        nickname: socket.nickname,
+        msg: msg
+      };
+      return socket.broadcast.to('doc_' + socket.__slug).emit('new msg', {
+        nickname: socket.nickname,
+        msg: msg
+      });
+    });
+    return socket.on('set nickname', function(nickname) {
+      socket.nickname = nickname;
+      return socket.broadcast.to('doc_' + socket.__slug).emit('set nickname', nickname);
     });
   });
 

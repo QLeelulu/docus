@@ -83,7 +83,7 @@ app.get '/d/:name', (req, res) ->
                 if err || !(doc && doc.length)
                     console.error err
                     return res.send 'Database Error'
-                res.render('doc', {doc: doc})
+                res.render('doc', {doc: doc[0]})
             )
     )
 
@@ -93,14 +93,28 @@ app.get '/d/:name', (req, res) ->
 
 io = sio.listen(app)
 nicknames = {}
+LAST_MSG = null
 
 docIO = io.of('/doc').on 'connection', (socket) ->
     #console.log io.sockets.sockets[socket.id]
 
     socket.on 'init', (data) ->
+
         Docs.findOne {slug: data.slug}, (err, doc) ->
             r = {success: false}
+
             if !err && doc
+                if !nicknames[data.slug]
+                    nicknames[data.slug] = {__count:0}
+                if !data.nickname
+                    data.nickname = 'user' + (nicknames[data.slug].__count + 1)
+                if data.nickname == '__count'
+                    data.nickname = '_count'
+                else if nicknames[data.slug][data.nickname]
+                    data.nickname += '[' + (new Date()).getTime() + ']'
+
+                # 如果doc的版本大于已经打了patch的版本，
+                # 需要加载还没有打patch的版本，进行合并
                 if doc.ver > doc.ver_patch
                     Patches
                         .find({doc_id: doc._id, ver: {$gt: doc.ver_patch}})
@@ -111,22 +125,48 @@ docIO = io.of('/doc').on 'connection', (socket) ->
                                 r.socket_id = socket.id
                                 r.doc = doc
                                 r.patches = patches
+                                # 
                                 socket.__slug = data.slug
+                                nicknames[data.slug][data.nickname] = socket.nickname = data.nickname
+                                nicknames[data.slug].__count += 1
+                                # online users
+                                r.nickname = data.nickname
+                                r.onlines = nicknames[data.slug].__count
+                                # last msg
+                                r.lastMsg = LAST_MSG
+
                                 socket.join 'doc_' + data.slug
                                 socket.emit 'init', r
-                                socket.broadcast.to('doc_' + data.slug).emit('new editor')
+                                socket.broadcast.to('doc_' + data.slug).emit 'new editor', data.nickname
+                            else
+                                r.error = 'Server Error'
+                                socket.emit 'init', r
          
                 else
                     r.success = true
                     r.socket_id = socket.id
                     r.doc = doc
+                    # bind slug to socket
                     socket.__slug = data.slug
+                    nicknames[data.slug][data.nickname] = socket.nickname = data.nickname
+                    nicknames[data.slug].__count += 1
+                    # online users
+                    r.nickname = data.nickname
+                    r.onlines = nicknames[data.slug].__count
+                    # last msg
+                    r.lastMsg = LAST_MSG
+
                     socket.join 'doc_' + data.slug
                     socket.emit 'init', r
-                    socket.broadcast.to('doc_' + data.slug).emit('new editor')
+                    socket.broadcast.to('doc_' + data.slug).emit 'new editor', {nickname:data.nickname, onlines:r.onlines}
+            
+            # 因为打开页面的时候，doc不存在会自动创建的，
+            # 所以这里必定是出错了
+            else
+                r.error = 'Server Error'
+                socket.emit 'init', r
     
     socket.on 'new version', (ver) ->
-        console.log ver
         Docs.findAndModify  {slug: socket.__slug}, #query
                             [], #sort
                             { '$inc': {ver: 1} }, #update
@@ -144,6 +184,31 @@ docIO = io.of('/doc').on 'connection', (socket) ->
                                             return console.error err
 
                                         socket.broadcast.to('doc_' + socket.__slug).emit 'new version', {patch_text: ver.patch_text}
+
+    socket.on 'disconnect',  () ->
+        if !socket.__slug || !socket.nickname
+            return
+
+        delete nicknames[socket.__slug][socket.nickname]
+        nicknames[socket.__slug].__count--
+        # emit leave
+        socket.broadcast.to('doc_' + socket.__slug).emit 'leave', {nickname:socket.nickname, onlines:nicknames[socket.__slug].__count}
+        # if no editor, delete it
+        if nicknames[socket.__slug].__count < 1
+            delete nicknames[socket.__slug]
+
+        #socket.broadcast.to('doc_' + socket.__slug).emit 'info', socket.nickname + ' disconnected'
+        # if nicknames[socket.__slug] not null, 
+        if nicknames[socket.__slug] && nicknames[socket.__slug].__count > 0
+            socket.broadcast.to('doc_' + socket.__slug).emit 'nicknames', {nicknames:nicknames[socket.__slug], onlines:nicknames[socket.__slug].__count}
+
+    socket.on 'new msg',  (msg) ->
+        LAST_MSG = {nickname:socket.nickname, msg:msg}
+        socket.broadcast.to('doc_' + socket.__slug).emit 'new msg', {nickname:socket.nickname, msg:msg}
+
+    socket.on 'set nickname',  (nickname) ->
+        socket.nickname = nickname
+        socket.broadcast.to('doc_' + socket.__slug).emit 'set nickname', nickname
 
 ###
 io.sockets.on 'connection',

@@ -8,21 +8,24 @@ html(lang="zh-cn")
         block head_css
         block head_script
     body
+        div#loadpage 正在加载页面内容...
         block header
-        div.topbar
-            div.fill
-                div.container
-                    a.brand(href="###") Doc Us
-                    ul.nav
-                        li.active
-                            a(href="/") Home
-                        li
-                            a(href="/about") About
-                        li
-                            a(href="/contact") Contact
+            div.topbar
+                div.fill
+                    div.container
+                        a.brand(href="###") Doc Us
+                        ul.nav
+                            li.active
+                                a(href="/") Home
+                            li
+                                a(href="/about") About
+                            li
+                                a(href="/contact") Contact
 
 
         #mainContent
             block content
         #footer
             block footer
+        script
+            document.getElementById('loadpage').style.display = 'none';

@@ -1,7 +1,39 @@
 (function() {
-  var Doc, Docus, MessageManage, dmp, docus;
+  var $cookie, Doc, Docus, MessageManage, dmp, docus;
 
   dmp = new diff_match_patch();
+
+  $cookie = function(name, value, options) {
+    var arr, date, domain, expires, path, secure, _ref;
+    if (typeof value !== 'undefined') {
+      options = options || {};
+      if (value === null) {
+        value = '';
+        options.expires = -1;
+      }
+      expires = '';
+      if (options.expires && (typeof options.expires === 'number' || options.expires.toUTCString)) {
+        date = '';
+        if (typeof options.expires === 'number') {
+          date = new Date();
+          date.setTime(date.getTime() + (options.expires * 24 * 60 * 60 * 1000));
+        } else {
+          date = options.expires;
+        }
+        expires = '; expires=' + date.toUTCString();
+      }
+      path = options.path ? '; path=' + options.path : '';
+      domain = options.domain ? '; domain=' + options.domain : '';
+      secure = (_ref = options.secure) != null ? _ref : {
+        '; secure': ''
+      };
+      return document.cookie = [name, '=', encodeURIComponent(value), expires, path, domain, secure].join('');
+    } else {
+      arr = document.cookie.match(new RegExp("(^| )" + name + "=([^;]*)(;|$)"));
+      if (arr !== null) return decodeURIComponent(arr[2]);
+      return null;
+    }
+  };
 
   Doc = (function() {
 
@@ -71,8 +103,54 @@
     function Docus() {
       this.socket = io.connect('/doc');
       this.mm = new MessageManage();
+      this.chatHolder = $("#chatHolder");
+      this.chatContent = $("#chatContent");
+      this.chatInput = $("#chatInput");
+      this.init();
       this.listens();
     }
+
+    Docus.prototype.init = function() {
+      var that;
+      that = this;
+      this.chatHolder.find('.head').click(function() {
+        return that.chatHolder.find('.main').toggle();
+      });
+      this.chatHolder.find('.head .name').click(function(e) {
+        if (!that.nameEditor) {
+          that.nameEditor = $('<input id="nameEditor" type="text" />');
+          that.nameEditor.insertAfter(this);
+          that.nameEditor.blur(function(e) {
+            var nickname;
+            nickname = $.trim($(this).val());
+            if (nickname) {
+              $cookie('nickname', nickname, {
+                expires: 365
+              });
+              that.socket.emit('set nickname', nickname);
+              that.nameEditor.hide();
+              return that.chatHolder.find('.head .name').html(nickname).show();
+            }
+          });
+          that.nameEditor.click(function(e) {
+            e.preventDefault();
+            return false;
+          });
+        }
+        that.nameEditor.val($(this).text());
+        $(this).hide();
+        that.nameEditor.show().focus();
+        e.preventDefault();
+        return false;
+      });
+      return this.chatInput.keyup(function(e) {
+        if (event.keyCode === 13) {
+          that.socket.emit('new msg', that.chatInput.val());
+          that.chatContent.append("<p class=\"me\"><span>我: </span>" + that.chatInput.val() + "</p>");
+          return that.chatInput.val('');
+        }
+      });
+    };
 
     Docus.prototype.listens = function() {
       var that;
@@ -80,7 +158,8 @@
       this.socket.on('connect', function() {
         that.mm.info('connected!');
         return that.socket.emit('init', {
-          slug: DocInfo.slug
+          slug: DocInfo.slug,
+          nickname: $cookie("nickname")
         });
       });
       this.socket.on('disconnect', function() {
@@ -105,15 +184,38 @@
         }
         if (that._isDisconnected) {
           that.doc.editor.setContent(content || '<p>&nbsp;</p>');
-          taht.doc.editor.selection.getRange().setCursor();
+          that.doc.editor.selection.getRange().setCursor();
         } else {
           that.doc = new Doc('docEditor', content || '<p>&nbsp;</p>');
         }
         that.socket_id = data.socket_id;
+        that.chatHolder.find('.head .name').html(data.nickname);
+        that.chatHolder.find('.head .count').html('(' + data.onlines + '人在编辑)');
+        if (data.lastMsg) {
+          that.chatContent.append("<p><span>" + data.lastMsg.nickname + ": </span>" + data.lastMsg.msg + "</p>");
+        }
+        that.chatHolder.show();
         return that.startPatchLoop();
       });
-      return this.socket.on('new version', function(ver) {
+      this.socket.on('new version', function(ver) {
         return that.doc.applyPatch(ver.patch_text);
+      });
+      this.socket.on('info', function(msg) {
+        return that.mm.info(msg);
+      });
+      this.socket.on('new editor', function(data) {
+        that.mm.info(data.nickname + ' 进来编辑了');
+        return that.chatHolder.find('.head .count').html('(' + data.onlines + '人在编辑)');
+      });
+      this.socket.on('leave', function(data) {
+        that.mm.info(data.nickname + ' 离开了');
+        return that.chatHolder.find('.head .count').html('(' + data.onlines + '人在编辑)');
+      });
+      this.socket.on('nicknames', function(data) {
+        return that.mm.info(data);
+      });
+      return this.socket.on('new msg', function(data) {
+        return that.chatContent.append("<p><span>" + data.nickname + ": </span>" + data.msg + "</p>");
       });
     };
 

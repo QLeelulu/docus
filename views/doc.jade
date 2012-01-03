@@ -9,15 +9,42 @@ block head_css
             font-size:12px;
         }
         table td{ padding:0; }
+        #docHeader{ height:20px; padding:3px 10px; }
+        #docHeader .sitename{ font-size:15px; font-weight:bold; margin-right:20px; }
+        #docHeader .docTitle{ font-size:14px; font-weight:bold; color:green; }
+
+        #chatHolder { display:none; position:fixed; right:10px; bottom:0; width:250px; border:solid 1px #777; border-bottom:none;}
+        #chatHolder .head{background:#555; color:#fff;padding:2px 5px; cursor:pointer;}
+        #chatHolder .head .name{font-weight:bold; margin-right:5px;}
+        #chatHolder .head .count{color:#aaa;}
+        #chatHolder .main{ display:none; height:200px; color:#111;}
+        #chatHolder .main p{padding:2px; margin:0; color:#333;}
+        #chatHolder .main p span{font-weight:bold; color:#444;}
+        #chatContent {height:150px; padding-bottom:10px;}
+        #chatInput{height:40; width:240px; padding:3px;}
+
+        #nameEditor {margin:0; padding:1px; width:80px; height:20px;}
+
     link(rel="stylesheet", href="/js/editor/themes/default/ueditor.css")
 
 block title
     |   -- #{doc.title}
 
+block header
+    div#docHeader
+        span.sitename Doc Us
+        span.docTitle [{ #{doc.title} }]
+
 block content
     //- h1 #{doc.title}
     #docEditor
-    
+    #chatHolder
+        div.head
+            span.name Doc Us
+            span.count 3人在编辑
+        div.main
+            div#chatContent
+            textarea#chatInput
 
 block footer
     script(type="text/javascript")
@@ -29,6 +56,7 @@ block footer
     script(src="/js/editor/editor_config.js")
     script(src="/js/editor/editor_all_min.js")
     script(src="/js/diff_match_patch.js")
+    script(src="/js/jquery-1.7.1.min.js")
     script(src="/js/docus.js")
 
 
