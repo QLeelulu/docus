@@ -117,7 +117,7 @@ class Docus
             return false
         
         # if press Enter, send msg
-        @chatInput.keyup (e)->
+        @chatInput.keydown (e)->
             if(event.keyCode==13)
                 that.socket.emit 'new msg', that.chatInput.val()
                 that.chatContent.append("<p class=\"me\"><span>我: </span>" + that.chatInput.val() + "</p>")
