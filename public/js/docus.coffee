@@ -122,6 +122,7 @@ class Docus
                 that.socket.emit 'new msg', that.chatInput.val()
                 that.chatContent.append("<p class=\"me\"><span>我: </span>" + that.chatInput.val() + "</p>")
                 that.chatInput.val('')
+                return false
     
     listens: () ->
         that = this

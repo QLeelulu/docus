@@ -147,7 +147,8 @@
         if (event.keyCode === 13) {
           that.socket.emit('new msg', that.chatInput.val());
           that.chatContent.append("<p class=\"me\"><span>我: </span>" + that.chatInput.val() + "</p>");
-          return that.chatInput.val('');
+          that.chatInput.val('');
+          return false;
         }
       });
     };
