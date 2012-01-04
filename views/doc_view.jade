@@ -13,6 +13,12 @@ block head_css
         #docHeader .sitename{ font-size:15px; font-weight:bold; margin-right:20px; }
         #docHeader .docTitle{ font-size:14px; font-weight:bold; color:green; }
         #docHeader .version{color:#555; font-size:13px;}
+        #docHeader a.edit{color:#fff; background:#bf1111; padding:1px 2px; font-size:12px; text-decoration:none; margin-left:10px;}
+        #docHeader a.edit:hover{background:＃369;}
+        #docHeader .btn{padding-left:20px;}
+        #docHeader .btn img{width:20px; height:20px; vertical-align: bottom; padding:0; margin:0 3px; cursor:pointer;}
+        #pause, #stop{display:none;}
+        #loading {display:none; margin-left:10px; background:green; color:#fff;font-size:12px; padding:1px 3px;}
         #docContent {padding:0 10px;}
 
 
@@ -23,7 +29,14 @@ block header
     div#docHeader
         span.sitename Doc Us
         span.docTitle [{ #{doc.title} }]
-        span.version .ver#{doc.ver}
+        span.version .ver#{doc.ver}／
+            span#patchVersion #{doc.ver}
+        a.edit(href="/d/#{doc.slug}") 编辑
+        span.btn
+            img#play(src="/images/play.png", title="点击回放版本修改过程")
+            img#pause(src="/images/pause.png")
+            img#stop(src="/images/stop.png")
+        span#loading
 
 block content
     #docContent

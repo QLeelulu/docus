@@ -15,6 +15,7 @@ body{
 	text-align: center;
 	background: #c44;
 	color: #fff;
+	font-size:13px;
 }
 #footer p {
     text-align: center; /* center align it with the container */

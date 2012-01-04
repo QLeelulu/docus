@@ -74,7 +74,7 @@ app.get '/d/:name', (req, res) ->
             doc = {
                 title: name
                 slug: slug
-                content: '<p>&nbsp;</p>'
+                content: ''
                 ver: 0
                 ver_patch: 0
                 created_at: new Date()
@@ -111,6 +111,32 @@ app.get '/v/:name', (req, res) ->
                 res.render('doc_view', {doc: doc})
         else
             return res.send '404! ~_~'
+    )
+
+app.get '/patches/:name', (req, res) ->
+    name = req.params.name
+    slug = utilities.makeSlug(name)
+    r = {success: false}
+    Docs.findOne( {slug: slug}, (err, doc) ->
+        if err
+            console.error err
+            r.error = 'Database Error! ~_~'
+            return res.send JSON.stringify(r)
+        if doc
+            Patches
+                .find( {doc_id: doc._id}, {fields:{'_id':0, 'doc_id':0}} )
+                .sort( {ver:1} )
+                .toArray (err, patches) ->
+                    if !err
+                        r.patches = patches
+                        r.success = true
+                        return res.send JSON.stringify(r)
+                    else
+                        r.error = 'Server Error! ~_~'
+                        return res.send JSON.stringify(r)
+        else
+            r.error = '404! ~_~'
+            return res.send JSON.stringify(r)
     )
 
 ###

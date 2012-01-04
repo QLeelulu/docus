@@ -183,10 +183,10 @@
           }
         }
         if (that._isDisconnected) {
-          that.doc.editor.setContent(content || '<p>&nbsp;</p>');
+          that.doc.editor.setContent(content || '');
           that.doc.editor.selection.getRange().setCursor();
         } else {
-          that.doc = new Doc('docEditor', content || '<p>&nbsp;</p>');
+          that.doc = new Doc('docEditor', content || '');
         }
         that.socket_id = data.socket_id;
         that.chatHolder.find('.head .name').html(data.nickname);
